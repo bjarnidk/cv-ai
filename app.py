@@ -1,6 +1,3 @@
-from dotenv import load_dotenv
-load_dotenv()
-
 import streamlit as st
 import PyPDF2
 import os
@@ -8,24 +5,53 @@ from io import BytesIO
 from openai import OpenAI
 from docx import Document
 
-# Initialize OpenAI client using environment variable
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Theme and layout
+st.set_page_config(page_title="Zempli", layout="centered")
 
-st.title("AI Job Application Assistant")
-st.markdown("Upload your CV and job description to generate a tailored cover letter.")
+# Custom styling to match Carrd
+st.markdown("""
+    <style>
+        div.stButton > button {
+            background-color: #FDE68A;
+            color: black;
+            font-weight: bold;
+            border: 1px solid #00000033;
+            border-radius: 12px;
+            padding: 0.6em 2em;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-# Upload CV (PDF or Word)
-cv_file = st.file_uploader("Upload your CV (PDF or Word)", type=["pdf", "docx"])
+# Custom header
+st.markdown("""
+    <div style='text-align: center; margin-top: 2rem;'>
+        <div style='display: inline-block; background-color: #A7F3D0; padding: 8px 20px; border-radius: 12px; font-weight: bold; font-size: 28px; color: black;'>Zempli</div>
+        <div style='margin-top: 1.5rem; background-color: #C4B5FD; padding: 18px 24px; border-radius: 16px; display: inline-block; font-family: monospace; font-size: 16px; color: #111827; max-width: 600px;'>
+            Upload your <b>CV</b> and a <b>job posting</b>.<br>
+            Our AI will instantly generate a tailored, personal cover letter — in any language.
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+# Initialize OpenAI client
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+# Upload CV
+cv_file = st.file_uploader("📄 Upload your CV (PDF or Word)", type=["pdf", "docx"])
 
 # Tone selector
-tone = st.selectbox("Choose tone for your application:", [
+tone = st.selectbox("🎨 Choose tone for your application:", [
     "Professionel", "Varm og empatisk", "Selvsikker og ambitiøs", "Kortfattet og ligetil"
 ])
 
 # Job description
-job_description = st.text_area("Paste the job description here:")
+job_description = st.text_area("📋 Paste the job description here:")
 
-if st.button("Generate Application") and cv_file and job_description:
+if st.button("✨ Try it for free"):
+    if not cv_file or not job_description:
+        st.warning("Please upload a CV and paste a job description.")
+        st.stop()
+
     # Extract text from uploaded CV
     cv_text = ""
     if cv_file.name.endswith(".pdf"):
@@ -40,7 +66,7 @@ if st.button("Generate Application") and cv_file and job_description:
             cv_text += para.text + "\n"
 
     # Detect language
-    with st.spinner("Detecting language..."):
+    with st.spinner("🔍 Detecting language..."):
         lang_response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -53,7 +79,7 @@ if st.button("Generate Application") and cv_file and job_description:
         detected_language = lang_response.choices[0].message.content.strip()
 
     # Generate cover letter
-    with st.spinner("Generating tailored application..."):
+    with st.spinner("✍️ Generating tailored application..."):
         prompt_instruction = f"""
 Write the following in {detected_language}:
 
@@ -93,4 +119,3 @@ Here is the job description:
         docx_file.seek(0)
 
         st.download_button("⬇️ Download as Word (.docx)", data=docx_file, file_name="cover_letter.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-
