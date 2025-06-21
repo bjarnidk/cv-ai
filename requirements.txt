@@ -3,3 +3,5 @@ openai
 python-docx
 PyPDF2
 python-dotenv
+fastapi
+uvicorn
